@@ -113,7 +113,7 @@
  */
 
 /** Use mbedTLS as host crypto */
-#define SSS_HAVE_HOSTCRYPTO_MBEDTLS 0
+#define SSS_HAVE_HOSTCRYPTO_MBEDTLS 1
 
 /** Use OpenSSL as host crypto */
 #define SSS_HAVE_HOSTCRYPTO_OPENSSL 0
@@ -131,7 +131,7 @@
  * Note, this is unsecure and only provided for experimentation
  * on platforms that do not have an mbedTLS PORT
  * Many :ref:`sssftr-control` have to be disabled to have a valid build. */
-#define SSS_HAVE_HOSTCRYPTO_NONE 1
+#define SSS_HAVE_HOSTCRYPTO_NONE 0
 
 #if (( 0                             \
     + SSS_HAVE_HOSTCRYPTO_MBEDTLS    \
@@ -196,10 +196,10 @@
  */
 
 /**  */
-#define SSS_HAVE_SCP_NONE 1
+#define SSS_HAVE_SCP_NONE 0
 
 /** Use SSS Layer for SCP.  Used for SE050 family. */
-#define SSS_HAVE_SCP_SCP03_SSS 0
+#define SSS_HAVE_SCP_SCP03_SSS 1
 
 #if (( 0                             \
     + SSS_HAVE_SCP_NONE              \
@@ -298,7 +298,7 @@
  */
 
 /** Use the default session (i.e. session less) login */
-#define SSS_HAVE_SE05X_AUTH_NONE 1
+#define SSS_HAVE_SE05X_AUTH_NONE 0
 
 /** Do User Authentication with UserID */
 #define SSS_HAVE_SE05X_AUTH_USERID 0
@@ -318,7 +318,7 @@
 #define SSS_HAVE_SE05X_AUTH_USERID_PLATFSCP03 0
 
 /** AESKey and PlatfSCP03 */
-#define SSS_HAVE_SE05X_AUTH_AESKEY_PLATFSCP03 0
+#define SSS_HAVE_SE05X_AUTH_AESKEY_PLATFSCP03 1
 
 /** ECKey and PlatfSCP03 */
 #define SSS_HAVE_SE05X_AUTH_ECKEY_PLATFSCP03 0
@@ -388,7 +388,7 @@
 #define SSS_HAVE_MBEDTLS_2_X 0
 
 /** Use 3.X version */
-#define SSS_HAVE_MBEDTLS_3_X 0
+#define SSS_HAVE_MBEDTLS_3_X 1
 
 #if (( 0                             \
     + SSS_HAVE_MBEDTLS_2_X           \
@@ -453,14 +453,14 @@
 #define SSSFTR_SE05X_KEY_GET 1
 
 /** SE05X Secure Element : Authenticate via ECKey */
-#define SSSFTR_SE05X_AuthECKey 1
+#define SSSFTR_SE05X_AuthECKey 0
 
 /** SE05X Secure Element : Allow creation of user/authenticated session.
  *
  * If the intended deployment only uses Platform SCP
  * Or it is a pure session less integration, this can
  * save some code size. */
-#define SSSFTR_SE05X_AuthSession 0
+#define SSSFTR_SE05X_AuthSession 1
 
 /** SE05X Secure Element : Allow creation/deletion of Crypto Objects
  *
@@ -478,7 +478,7 @@
 #define SSSFTR_SW_ECC 1
 
 /** Software : RSA */
-#define SSSFTR_SW_RSA 1
+#define SSSFTR_SW_RSA 0
 
 /** Software : KEY operations : SET Key */
 #define SSSFTR_SW_KEY_SET 1
@@ -491,7 +491,7 @@
  * e.g. Major part of the mebdTLS SSS layer is purely used for
  * testing of Secure Element implementation, and can be avoided
  * fully during many production scenarios. */
-#define SSSFTR_SW_TESTCOUNTERPART 1
+#define SSSFTR_SW_TESTCOUNTERPART 0
 
 /* ====================================================================== *
  * == Computed Options ================================================== *
@@ -565,13 +565,13 @@
 #define SSS_HAVE_EC_MONT 1
 
 /* MIFARE DESFire is enabled */
-#define SSS_HAVE_MIFARE_DESFIRE 1
+#define SSS_HAVE_MIFARE_DESFIRE 0
 
 /* PBKDF2 is enabled */
 #define SSS_HAVE_PBKDF2 1
 
 /* TLS handshake support on SE is enabled */
-#define SSS_HAVE_TLS_HANDSHAKE 1
+#define SSS_HAVE_TLS_HANDSHAKE 0
 
 /* Import Export Key is enabled */
 #define SSS_HAVE_IMPORT 1

@@ -10,6 +10,8 @@
 #error "Only with SE051_H based build"
 #endif
 
+#include "se05x_tlv.h"
+
 /** Se05x_T4T_API_SelectT4TApplet
  *
  * See @ref Se05x_T4T_API_SelectT4TApplet.

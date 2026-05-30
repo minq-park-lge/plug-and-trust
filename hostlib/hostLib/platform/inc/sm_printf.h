@@ -13,15 +13,16 @@
 extern "C" {
 #endif
 
+#include "se05x_platform.h"
 
 #if AX_EMBEDDED \
     && (!defined (__MBED__))
 #   include "fsl_debug_console.h"
 #else
-#   define PRINTF printf
-#   define SCANF scanf
-#   define PUTCHAR putchar
-#   define GETCHAR getchar
+#   define PRINTF se05x_platform_printf
+#   define SCANF
+#   define PUTCHAR
+#   define GETCHAR
 #endif
 
 #define CONSOLE         (0x01)

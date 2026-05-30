@@ -58,14 +58,17 @@ smStatus_t Se05x_API_I2CM_Send(
 {
     smStatus_t retStatus  = SM_NOT_OK;
     const tlvHeader_t hdr = {{kSE05x_CLA, kSE05x_INS_CRYPTO, kSE05x_P1_DEFAULT, kSE05x_P2_I2CM}};
-    uint8_t cmdbuf[SE05X_MAX_BUF_SIZE_CMD];
+    static uint8_t cmdbuf[SE05X_MAX_BUF_SIZE_CMD];
     uint8_t *pCmdbuf                       = &cmdbuf[0];
     size_t cmdbufLen                       = 0;
     int tlvRet                             = 0;
-    uint8_t rspbuf[SE05X_MAX_BUF_SIZE_RSP] = {0};
+    static uint8_t rspbuf[SE05X_MAX_BUF_SIZE_RSP] = {0};
     uint8_t *pRspbuf                       = &rspbuf[0];
     size_t rspbufLen                       = ARRAY_SIZE(rspbuf);
     size_t rspIndex                        = 0;
+
+    memset(cmdbuf, 0, sizeof(cmdbuf));
+    memset(rspbuf, 0, sizeof(rspbuf));
 
 #if VERBOSE_APDU_LOGS
     NEWLINE();
