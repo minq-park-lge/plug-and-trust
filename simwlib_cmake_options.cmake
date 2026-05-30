@@ -1,7 +1,7 @@
 #SIMW LIBRARY CMAKE OPTIONS
 #########################################################
 
-SET(PTMW_Applet "SE050_E" CACHE STRING "The Secure Element Applet")
+SET(PTMW_Applet "SE051_H" CACHE STRING "The Secure Element Applet")
 SET_PROPERTY(CACHE PTMW_Applet PROPERTY STRINGS "SE05X_A;SE05X_B;SE05X_C;SE051_H;AUTH;SE050_E")
 
 SET(PTMW_SE05X_Ver "07_02" CACHE STRING "SE05X Applet version.")
@@ -238,4 +238,4 @@ IF(WithCodeCoverage)
 ENDIF()
 #########################################################
 
-CONFIGURE_FILE(${SIMW_LIB_DIR}/sss/inc/fsl_sss_ftr.h.in ${SIMW_LIB_DIR}/fsl_sss_ftr.h)
+# CONFIGURE_FILE(${SIMW_LIB_DIR}/sss/inc/fsl_sss_ftr.h.in ${SIMW_LIB_DIR}/fsl_sss_ftr.h)

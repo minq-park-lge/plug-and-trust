@@ -7805,10 +7805,12 @@ static smStatus_t sss_se05x_TXn(struct Se05xSession *pSession,
     tlvHeader_t outHdr = {
         0,
     };
-    uint8_t txBuf[SE05X_MAX_BUF_SIZE_CMD] = {
+    static uint8_t txBuf[SE05X_MAX_BUF_SIZE_CMD] = {
         0,
     };
+
     size_t txBufLen = sizeof(txBuf);
+    memset(txBuf, 0, sizeof(txBuf));
 
     const tlvHeader_t *sendHdr = NULL;
     uint8_t *sendBuf           = NULL;
@@ -7885,11 +7887,12 @@ static smStatus_t sss_se05x_channel_txnRaw(void *conn_ctx,
     size_t *rspLen,
     uint8_t hasle)
 {
-    uint8_t txBuf[SE05X_MAX_BUF_SIZE_CMD] = {0};
+    static uint8_t txBuf[SE05X_MAX_BUF_SIZE_CMD] = {0};
     size_t i                              = 0;
     uint32_t U32rspLen                    = 0;
     smStatus_t ret                        = SM_NOT_OK;
 
+    memset(txBuf, 0, sizeof(txBuf));
     memcpy(&txBuf[i], hdr, sizeof(*hdr));
 
     i += sizeof(*hdr);
