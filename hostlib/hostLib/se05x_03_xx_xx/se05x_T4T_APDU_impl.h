@@ -35,10 +35,20 @@ smStatus_t Se05x_T4T_API_SelectT4TApplet(pSe05xSession_t session_ctx)
 {
     unsigned char appletName[] = T4T_APPLET_NAME;
     U8 selectResponseData[256] = {0};
-    U16 selectResponseDataLen  = sizeof(selectResponseData);
+    size_t selectResponseDataLen = sizeof(selectResponseData);
+    tlvHeader_t hdr = {{0x00, 0xA4, 0x04, 0x00}};
 
-    return GP_Select(
-        session_ctx->conn_ctx, (U8 *)&appletName, sizeof(appletName), selectResponseData, &selectResponseDataLen);
+    /*
+     * GP_Select() uses smCom_TransceiveRaw(), but this target only installs
+     * the normal session transaction callback. Send the ISO SELECT AID command
+     * through the same APDU path as the rest of the T4T operations.
+     */
+    return DoAPDUTxRx_s_Case4(session_ctx,
+        &hdr,
+        (U8 *)&appletName,
+        sizeof(appletName),
+        selectResponseData,
+        &selectResponseDataLen);
 }
 
 smStatus_t Se05x_T4T_API_SelectFile(pSe05xSession_t session_ctx, uint8_t *fileId, size_t fileIDLen)
@@ -129,7 +139,13 @@ smStatus_t Se05x_T4T_API_UpdateBinary(pSe05xSession_t session_ctx, uint8_t *data
         hdr.hdr[2] = (offset >> 8) & 0xFF;
         hdr.hdr[3] = (offset) & 0xFF;
 
-        buf_len_sent = (remLen > 128) ? (128) : (remLen);
+        /*
+         * Keep UPDATE BINARY C-APDUs small enough to stay on the normal
+         * T=1-over-I2C transmit path. Larger payloads can fall through to the
+         * raw transceive callback on this target, which is not installed and
+         * returns SMCOM_NO_PRIOR_INIT (0x7015).
+         */
+        buf_len_sent = (remLen > 48) ? (48) : (remLen);
 
         ret = DoAPDUTx_s_Case3(session_ctx, &hdr, data + offset, buf_len_sent);
         if (ret != SM_OK){
