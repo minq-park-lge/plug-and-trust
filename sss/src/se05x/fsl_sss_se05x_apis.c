@@ -450,15 +450,17 @@ sss_status_t sss_se05x_session_open(sss_se05x_session_t *session,
         else {
             se05xSession->applet_version = (0xFFFFFF00 & CommState.appletVersion);
 #if ENABLE_APPLET_VERSION_CHECK
-            if (HEX_EXPECTED_APPLET_VERSION == (0xFFFFFF00 & CommState.appletVersion)) {
-                /* Fine */
-            }
+            const uint32_t current_ver = (0xFFFFFF00 & CommState.appletVersion);
+            const bool version_matches = (current_ver == HEX_EXPECTED_APPLET_VERSION)
 #if defined(HEX_EXPECTED_APPLET_VERSION_PATCH1)
-            else if (HEX_EXPECTED_APPLET_VERSION_PATCH1 == (0xFFFFFF00 & CommState.appletVersion)) {
-                /* Fine */
-            }
+                || (current_ver == HEX_EXPECTED_APPLET_VERSION_PATCH1)
 #endif
-            else if ((0xFFFFFF00 & CommState.appletVersion) < HEX_EXPECTED_APPLET_VERSION) {
+                ;
+
+            if (version_matches) {
+                /* Valid version detected; continue session opening */
+            }
+            else if (current_ver < HEX_EXPECTED_APPLET_VERSION) {
                 LOG_E("Mismatch Applet version.");
                 LOG_E("Compiled for 0x%X. Got older 0x%X",
                     (HEX_EXPECTED_APPLET_VERSION) >> 8,
