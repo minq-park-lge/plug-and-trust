@@ -25,6 +25,8 @@
 #endif
 
 #define SE05X_T4T_MAX_BUF_SIZE_RSP 270
+//add for bigger than 256 
+#define SE05X_T4T_READ_BINARY_CHUNK_SIZE 256
 
 #define T4T_APPLET_NAME                          \
     {                                            \
@@ -35,20 +37,10 @@ smStatus_t Se05x_T4T_API_SelectT4TApplet(pSe05xSession_t session_ctx)
 {
     unsigned char appletName[] = T4T_APPLET_NAME;
     U8 selectResponseData[256] = {0};
-    size_t selectResponseDataLen = sizeof(selectResponseData);
-    tlvHeader_t hdr = {{0x00, 0xA4, 0x04, 0x00}};
+    U16 selectResponseDataLen  = sizeof(selectResponseData);
 
-    /*
-     * GP_Select() uses smCom_TransceiveRaw(), but this target only installs
-     * the normal session transaction callback. Send the ISO SELECT AID command
-     * through the same APDU path as the rest of the T4T operations.
-     */
-    return DoAPDUTxRx_s_Case4(session_ctx,
-        &hdr,
-        (U8 *)&appletName,
-        sizeof(appletName),
-        selectResponseData,
-        &selectResponseDataLen);
+    return GP_Select(
+        session_ctx->conn_ctx, (U8 *)&appletName, sizeof(appletName), selectResponseData, &selectResponseDataLen);
 }
 
 smStatus_t Se05x_T4T_API_SelectFile(pSe05xSession_t session_ctx, uint8_t *fileId, size_t fileIDLen)
@@ -59,71 +51,62 @@ smStatus_t Se05x_T4T_API_SelectFile(pSe05xSession_t session_ctx, uint8_t *fileId
 
 smStatus_t Se05x_T4T_API_ReadBinary(pSe05xSession_t session_ctx, uint8_t *output, size_t *outlen)
 {
-    smStatus_t retStatus                        = SM_NOT_OK;
-    uint8_t rspbuf[SE05X_T4T_MAX_BUF_SIZE_RSP]  = {0};
-    size_t rspbufLen                            = 0;
-    size_t ndefTotalLen                         = 0;
-    uint16_t outOffset                          = 0;
-    size_t expectedLen                          = *outlen;
-    size_t dataLen                              = 0;
+//add for bigger than 256 
+    smStatus_t retStatus                       = SM_NOT_OK;
+    tlvHeader_t hdr                            = {{0x00, kSE05x_T4T_INS_READ_BINARY, 0x00, 0x00}};
+    uint8_t rspbuf[SE05X_T4T_MAX_BUF_SIZE_RSP] = {0};
+    uint8_t *pRspbuf                           = &rspbuf[0];
+    size_t requestedLen                        = (outlen != NULL) ? *outlen : 0;
+    size_t totalRead                           = 0;
+    uint16_t offset                            = 0;
 
-    tlvHeader_t hdr = {{0x00, kSE05x_T4T_INS_READ_BINARY, 0x00, 0x00}};
+    if (output == NULL || outlen == NULL || requestedLen == 0) {
+        return SM_NOT_OK;
+    }
 
-    do
-    {
-        hdr.hdr[2] = (outOffset >> 8) & 0xFF;
-        hdr.hdr[3] = (outOffset) & 0xFF;
-
-        rspbufLen = sizeof(rspbuf);
+    while (totalRead < requestedLen) {
+        size_t rspbufLen = ARRAY_SIZE(rspbuf);
+        hdr.hdr[2]       = (offset >> 8) & 0xFF;
+        hdr.hdr[3]       = offset & 0xFF;
 
         retStatus = DoAPDUTxRx_s_Case2(session_ctx, &hdr, NULL, 0, rspbuf, &rspbufLen);
-        if (retStatus != SM_OK){
-            return retStatus;
+        if (retStatus != SM_OK) {
+            goto cleanup;
         }
 
-        if (rspbufLen < 2){
-            return SM_NOT_OK;
+        retStatus = SM_NOT_OK;
+
+        if (rspbufLen < 2) {
+            goto cleanup;
         }
-
-        retStatus = (smStatus_t)((rspbuf[rspbufLen - 2] << 8) | rspbuf[rspbufLen - 1]);
-        if (retStatus != SM_OK){
-            return SM_NOT_OK;
-        }
-
-        dataLen = rspbufLen - 2;
-
-        if(outOffset >=expectedLen){
-            return SM_NOT_OK;
-        }
-
-        if (dataLen > (expectedLen - outOffset)){
-            dataLen = expectedLen - outOffset;
-        }
-
-        memcpy(output + outOffset, rspbuf, dataLen);
-        outOffset += (uint16_t)dataLen;
-
-        /* Parse NDEF length after first 2 bytes */
-        if ((ndefTotalLen == 0) && (outOffset >= 2))
-        {
-            ndefTotalLen = ((output[0] << 8) | output[1]) + 2;
-            expectedLen = ndefTotalLen;
-        }
-
-        /* Stop when full NDEF read */
-        if ((ndefTotalLen != 0) && (outOffset >= ndefTotalLen)){
+        retStatus = (smStatus_t)((pRspbuf[rspbufLen - 2] << 8) | pRspbuf[rspbufLen - 1]);
+        if (retStatus == SM_OK && rspbufLen == 2 && totalRead > 0) {
             break;
         }
+        if (retStatus == SM_OK && rspbufLen > 2) {
+            size_t chunkLen = rspbufLen - 2;
+            size_t remLen   = requestedLen - totalRead;
+            size_t copyLen  = (chunkLen > remLen) ? remLen : chunkLen;
 
-        /* Chunk end safety */
-        if (dataLen < 256){
-            break;
+            memcpy(output + totalRead, rspbuf, copyLen);
+            totalRead += copyLen;
+            offset += (uint16_t) copyLen;
+
+            if (chunkLen < SE05X_T4T_READ_BINARY_CHUNK_SIZE || copyLen < chunkLen) {
+                break;
+            }
         }
+        else {
+            goto cleanup;
+        }
+    }
 
-    } while (outOffset < expectedLen);
-
-    *outlen = outOffset;
-    return SM_OK;
+    *outlen = totalRead;
+cleanup:
+    if (retStatus != SM_OK) {
+        *outlen = 0;
+    }
+    return retStatus;
 }
 
 smStatus_t Se05x_T4T_API_UpdateBinary(pSe05xSession_t session_ctx, uint8_t *data, size_t dataLen)
@@ -139,13 +122,7 @@ smStatus_t Se05x_T4T_API_UpdateBinary(pSe05xSession_t session_ctx, uint8_t *data
         hdr.hdr[2] = (offset >> 8) & 0xFF;
         hdr.hdr[3] = (offset) & 0xFF;
 
-        /*
-         * Keep UPDATE BINARY C-APDUs small enough to stay on the normal
-         * T=1-over-I2C transmit path. Larger payloads can fall through to the
-         * raw transceive callback on this target, which is not installed and
-         * returns SMCOM_NO_PRIOR_INIT (0x7015).
-         */
-        buf_len_sent = (remLen > 48) ? (48) : (remLen);
+        buf_len_sent = (remLen > 128) ? (128) : (remLen);
 
         ret = DoAPDUTx_s_Case3(session_ctx, &hdr, data + offset, buf_len_sent);
         if (ret != SM_OK){
